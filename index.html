@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>奶龙大乱斗 · NAILONG BRAWL</title>
+  <link rel="icon" href="assets/icons/icon-64.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b0806" />
+  <link rel="stylesheet" href="css/style.css?v=sfe10" />
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div id="vig"></div>
+  <div id="grain"></div>
+  <div id="flash"></div>
+  <div id="dmg-layer"></div>
+  <div id="boot-mask">
+    <i id="boot-bg-a"></i><i id="boot-bg-b"></i>
+    <canvas id="boot-fx"></canvas>
+    <span>奶龙大乱斗</span>
+    <div id="boot-bar"><i></i><em id="boot-pct">0%</em></div>
+    <p id="boot-note"></p>
+    <p id="boot-tip"></p>
+    <p id="fatal-status"></p>
+  </div>
+
+  <!-- ============ 开始界面：主流格斗游戏排版（左侧菜单 + 全屏主视觉） ============ -->
+  <section id="screen-title" class="screen">
+    <div class="title-frame">
+      <header class="brand">
+        <p class="kicker">NAILONG BRAWL</p>
+        <h1 class="logo"><strong>奶龙大乱斗</strong></h1>
+        <p class="brand-tag">VERSUS FIGHTING</p>
+      </header>
+      <nav class="menu">
+        <button class="menu-item active" id="btn-start">
+          <span class="num">01</span>
+          <span class="lab"><b data-i18n="arcade">开始对战</b><em>ARCADE</em></span>
+        </button>
+        <button class="menu-item" id="btn-online">
+          <span class="num">02</span>
+          <span class="lab"><b data-i18n="online">联机对战</b><em>ONLINE</em></span>
+        </button>
+        <button class="menu-item" id="btn-gallery">
+          <span class="num">03</span>
+          <span class="lab"><b data-i18n="gallery">角色鉴赏</b><em>GALLERY</em></span>
+        </button>
+        <button class="menu-item" id="btn-help">
+          <span class="num">04</span>
+          <span class="lab"><b data-i18n="help">操作说明</b><em>HELP</em></span>
+        </button>
+        <button class="menu-item" id="btn-settings">
+          <span class="num">05</span>
+          <span class="lab"><b data-i18n="settings">设置</b><em>SETTINGS</em></span>
+        </button>
+        <div class="mode-row">
+          <span class="mode-lab">MODE</span>
+          <div class="mode-pills" id="mode-pills">
+            <button type="button" data-mode="cpu" class="on">CPU</button>
+            <button type="button" data-mode="train">TRAIN</button>
+            <button type="button" data-mode="pvp">2P</button>
+            <button type="button" data-mode="online">NET</button>
+          </div>
+          <select id="mode" class="sr-only" aria-hidden="true" tabindex="-1">
+            <option value="cpu">1P 对 CPU</option>
+            <option value="train">训练模式</option>
+            <option value="pvp">1P 对 2P 同屏</option>
+            <option value="online">联机对战</option>
+          </select>
+        </div>
+        <div class="mode-row hidden" id="diff-row">
+          <span class="mode-lab">DIFF</span>
+          <select id="diff-select" class="diff-select">
+            <option value="0.35">新人</option>
+            <option value="0.62" selected>普通</option>
+            <option value="0.85">高手</option>
+            <option value="1.05">地狱</option>
+          </select>
+        </div>
+      </nav>
+      <footer class="title-foot">
+        <p class="copy">PRESS START</p>
+      </footer>
+    </div>
+    <div id="stats-panel" class="hidden"></div>
+  </section>
+
+  <!-- ============ 角色 / 场景选择（街霸6 式） ============ -->
+  <section id="screen-select" class="screen hidden">
+    <div class="select-frame">
+      <header class="select-head">
+        <p>NAILONG BRAWL</p>
+        <h2>选择角色 <span>VS</span> 选择擂台</h2>
+      </header>
+      <div class="select-grid">
+        <article class="sel-side p1" data-side="1">
+          <img class="sel-portrait" id="sel-p1-img" alt="" src="assets/naiwa-portrait.jpg?v=p2" />
+          <div class="sel-tag">1P</div>
+          <h3 id="sel-p1-name">奶龙</h3>
+          <p id="sel-p1-sub">NAILONG · 凝胶龙系</p>
+          <div class="sel-chars" data-side="1">
+            <button type="button" class="sel-char on" data-id="naiwa"><span>奶龙</span></button>
+            <button type="button" class="sel-char" data-id="meishu"><span>美鼠</span></button>
+          </div>
+        </article>
+        <div class="sel-vs">VS</div>
+        <article class="sel-side p2" data-side="2">
+          <img class="sel-portrait" id="sel-p2-img" alt="" src="assets/meishu-portrait.jpg?v=p2" />
+          <div class="sel-tag">2P</div>
+          <h3 id="sel-p2-name">美鼠</h3>
+          <p id="sel-p2-sub">MEISHU · 弹性系</p>
+          <div class="sel-chars" data-side="2">
+            <button type="button" class="sel-char" data-id="naiwa"><span>奶龙</span></button>
+            <button type="button" class="sel-char on" data-id="meishu"><span>美鼠</span></button>
+          </div>
+        </article>
+      </div>
+      <div class="sel-stages">
+        <div class="sel-stages-label">STAGE SELECT</div>
+        <div class="sel-stage-row" id="sel-stage-row"></div>
+      </div>
+      <div class="sel-actions">
+        <button type="button" class="btn ghost" id="btn-select-back">返回</button>
+        <button type="button" class="btn" id="btn-select-fight">开始对战</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 角色鉴赏 ============ -->
+  <section id="screen-gallery" class="screen hidden">
+    <div class="gallery">
+      <h2>角色鉴赏 <em>NAILONG BRAWL</em></h2>
+      <div class="gal-3d-bar">
+        <div id="gal-tabs"><button data-ch="naiwa">奶龙</button><button data-ch="meishu">美鼠</button></div>
+        <div id="gal-demo">
+          <button data-move="idle">待机</button><button data-move="lp">轻拳</button><button data-move="hp">重拳</button>
+          <button data-move="skill">必杀</button><button data-move="skill2">升龙</button><button data-move="super">超必</button>
+          <button data-move="ultra1">终壹</button><button data-move="ultra2">终贰</button><button data-move="ultra3">终叁</button>
+        </div>
+        <span class="gal-hint">拖拽画面旋转角色</span>
+      </div>
+      <div class="gal-grid">
+        <div class="gal-card p1">
+          <div class="gal-info">
+            <h3>奶龙 <span>NAILONG</span></h3>
+            <p class="tag">远程发波型 · 拳出火焰、脚出寒冰</p>
+            <ul>
+              <li><b>焰息轻波 / 炎龙波</b> 拳系火波，中段远攻</li>
+              <li><b>霜踢轻波 / 寒冰波</b> 脚系冰波，下段更长、命中冻僵</li>
+              <li><b>泰山压顶 · 凝胶升龙</b> 波升龙指令必杀</li>
+              <li class="ult"><b>奶龙咆哮</b> 超必 O，气 50，连斩接火浪</li>
+              <li class="ult"><b>九转炎龙破</b> 前+O，气 50，九龙突进</li>
+              <li class="ult"><b>奶河焚天</b> 下+O，气 50，熔浆托天</li>
+              <li class="ult"><b>炎帝临世</b> 后+O，气 100，炎帝降临</li>
+            </ul>
+          </div>
+        </div>
+        <div class="gal-card p2">
+          <div class="gal-info">
+            <h3>美鼠 <span>MEISHU</span></h3>
+            <p class="tag">大耳乙烯基袋鼠 · 弹性连段型</p>
+            <ul>
+              <li><b>刺拳 / 轻踢</b> 连环快攻，命中取消</li>
+              <li><b>袋鼠踢</b> 重脚挑空，接升龙或超必</li>
+              <li><b>旋风弹跳 · 袋鼠升龙</b> 指令必杀</li>
+              <li class="ult"><b>暴走尾旋</b> 超必 4/O，气 50</li>
+              <li class="ult"><b>紫渊吞噬</b> 前+超必，气 50，紫黑裂隙</li>
+              <li class="ult"><b>暗星陨灭</b> 下+超必，气 50，暗星坠落</li>
+              <li class="ult"><b>虚空王座</b> 后+超必，气 100，紫夜终焉</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <button class="btn ghost" id="btn-gallery-back">返 回</button>
+    </div>
+  </section>
+
+  <!-- ============ 操作说明 ============ -->
+  <section id="screen-help" class="screen hidden">
+    <div class="help">
+      <h2>操作说明 <em>CONTROLS</em></h2>
+      <div class="help-grid">
+        <div>
+          <h3>1P 奶龙</h3>
+          <dl>
+            <dt>A D · S · W</dt><dd>走、蹲、跳（后退是走路；按住后退时被打中才防御，下退挡低攻，双击冲刺）</dd>
+            <dt>J / K</dt><dd>轻拳 焰息轻波 / 轻脚 霜踢轻波</dd>
+            <dt>U / I</dt><dd>重拳 炎龙波 / 重脚 寒冰波</dd>
+            <dt>长按 U / I</dt><dd><b style="color:#ff9a3c">蓄力波</b>：聚能 0.34 秒起算，满蓄 1.3 秒自动发射 · 炎龙咆哮波 / 绝对零度波（贯穿、更高伤害与硬直）</dd>
+            <dt>下+拳脚</dt><dd>下焰波 / 地冰波（下段）；升炎波可挑空</dd>
+            <dt>近身 前+J</dt><dd>投技 · 抱抱摔（不可防）</dd>
+            <dt>↓↘→ + 拳 或 L</dt><dd>必杀 · 泰山压顶</dd>
+            <dt>→↓↘ + 拳 或 蹲+L</dt><dd>必杀 · 凝胶升龙（无敌起手）· 火焰升龙特效</dd>
+            <dt>O / 双波+拳</dt><dd>超必 · 奶龙咆哮（气 50）</dd>
+            <dt>前+O</dt><dd>终极 · 九转炎龙破（气 50）</dd>
+            <dt>下+O</dt><dd>终极 · 奶河焚天（气 50）</dd>
+            <dt>后+O</dt><dd>终极 · 炎帝临世（气 100）</dd>
+          </dl>
+        </div>
+        <div>
+          <h3>2P 美鼠</h3>
+          <dl>
+            <dt>← → ↓ ↑</dt><dd>走、蹲、跳（后退是走路；按住后退时被打中才防御，下退挡低攻，双击冲刺）</dd>
+            <dt>1 / 2</dt><dd>轻拳刺拳 / 轻踢</dd>
+            <dt>7 / 8</dt><dd>重拳 / 袋鼠踢（挑空）</dd>
+            <dt>近身 前+1</dt><dd>投技 · 袋装抛投</dd>
+            <dt>3 或 ↓↘→+拳</dt><dd>旋风弹跳（空中可变钻）</dd>
+            <dt>蹲+3 或升龙指令</dt><dd>袋鼠升龙</dd>
+            <dt>4</dt><dd>超必 · 暴走尾旋（气 50）</dd>
+            <dt>前+4</dt><dd>终极 · 紫渊吞噬（气 50）</dd>
+            <dt>下+4</dt><dd>终极 · 暗星陨灭（气 50）</dd>
+            <dt>后+4</dt><dd>终极 · 虚空王座（气 100）</dd>
+          </dl>
+        </div>
+      </div>
+      <p class="tips">取消：轻攻击命中后可接重攻击 → 必杀 → 超必。下段必须蹲防。投技破防。三局两胜。同屏 2P 用方向键+123478。联机双方都用 1P 键位。</p>
+      <p style="margin-top:18px;"><button class="btn" id="btn-help-back">返 回</button></p>
+    </div>
+  </section>
+
+  <!-- ============ 联机大厅 ============ -->
+  <section id="screen-online" class="screen hidden">
+    <div class="net-panel">
+      <h2>联机对战 <em>ONLINE</em></h2>
+      <p id="net-status">创建房间或输入房间码。同一电脑开两个浏览器标签即可；跨设备需要联网。</p>
+      <div class="net-meta">
+        <div class="net-steps" id="net-steps"><i></i><i></i><i></i><span>信令</span><span>连接</span><span>就绪</span></div>
+        <div id="net-ping">-- ms</div>
+      </div>
+      <div class="net-code" id="net-code">----</div>
+      <div class="net-row">
+        <button class="btn" id="btn-net-host">创建房间</button>
+        <input id="net-join-code" maxlength="6" placeholder="房间码" autocomplete="off" />
+        <button class="btn ghost" id="btn-net-join">加入</button>
+        <button class="btn ghost" id="btn-net-copy">复制邀请链接</button>
+      </div>
+      <div class="net-row">
+        <input id="net-name" maxlength="8" placeholder="你的侠名（对战时显示）" autocomplete="off" />
+      </div>
+      <p class="net-hint">主机是奶龙（火/冰波），加入方是美鼠。双方都用 WASD + J K U I L O。</p>
+      <p><button class="btn ghost" id="btn-net-back">返 回</button></p>
+    </div>
+  </section>
+
+  <!-- ============ VS 界面 ============ -->
+  <section id="screen-vs" class="screen hidden">
+    <div class="vs-stage">
+      <div class="vs-card left">
+        <img id="vs-p1-img" alt="" src="assets/naiwa-portrait.jpg?v=p2" />
+        <h2 id="vs-p1-name">奶龙</h2>
+        <p id="vs-p1-sub">NAILONG · 凝胶龙系</p>
+      </div>
+      <div class="vs-center">
+        <div class="vs-mark">VS</div>
+        <p id="vs-round">ROUND 1</p>
+      </div>
+      <div class="vs-card right">
+        <img id="vs-p2-img" alt="" src="assets/meishu-portrait.jpg?v=p2" />
+        <h2 id="vs-p2-name">美鼠</h2>
+        <p id="vs-p2-sub">MEISHU · 弹性系</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 战斗 HUD ============ -->
+  <section id="screen-fight" class="screen hidden">
+    <div id="hud">
+      <div class="hud-top">
+        <div class="fighter-hud">
+          <div class="avatar" id="hud-p1-av">
+            <img alt="" src="assets/naiwa-portrait.jpg?v=p2" />
+            <i class="av-frame"></i><i class="av-badge"></i><i class="av-shine"></i>
+          </div>
+          <div class="bars">
+            <div class="name-row">
+              <span class="name" id="hud-p1-name">P1 奶龙</span>
+              <div class="stars" id="stars-p1"><i></i><i></i></div>
+            </div>
+            <div class="hp"><b id="hg-p1"></b><i id="hp-p1"></i></div>
+            <div class="meter"><i id="mt-p1"></i><em>气</em></div>
+          </div>
+        </div>
+        <div class="clock-wrap">
+          <div class="clock" id="timer">99</div>
+          <div class="round-tag" id="round-tag">ROUND 1</div>
+        </div>
+        <div class="fighter-hud right">
+          <div class="avatar meishu" id="hud-p2-av">
+            <img alt="" src="assets/meishu-portrait.jpg?v=p2" />
+            <i class="av-frame"></i><i class="av-badge"></i><i class="av-shine"></i>
+          </div>
+          <div class="bars">
+            <div class="name-row">
+              <div class="stars" id="stars-p2"><i></i><i></i></div>
+              <span class="name" id="hud-p2-name">美鼠 CPU</span>
+            </div>
+            <div class="hp mirror"><b id="hg-p2"></b><i id="hp-p2"></i></div>
+            <div class="meter mirror"><i id="mt-p2"></i><em>气</em></div>
+          </div>
+        </div>
+      </div>
+      <div class="combo" id="combo"></div>
+      <div class="announce" id="announce"></div>
+      <div class="skill-call" id="skill-p1"></div>
+      <div class="skill-call right" id="skill-p2"></div>
+      <button type="button" id="btn-super" class="hud-super ready">超必 O</button>
+    </div>
+    <div id="letterbox" class="hidden"><i class="lb-top"></i><i class="lb-bot"></i></div>
+    <div id="cutin" class="hidden">
+      <div class="cutin-copy">
+        <div id="cutin-name">奶龙</div>
+        <div id="cutin-skill">奶龙咆哮</div>
+      </div>
+    </div>
+    <div id="ko-banner" class="hidden">
+      <i class="rb-wipe"></i>
+      <i class="rb-flash"></i>
+      <div class="rb-confetti" id="rb-confetti"></div>
+      <div class="result-stage">
+        <aside class="rb-hero" id="rb-hero">
+          <img id="rb-hero-img" alt="" src="assets/naiwa-portrait.jpg?v=p2" />
+          <i class="rb-hero-slash"></i>
+          <i class="rb-hero-glow"></i>
+          <div class="rb-hero-tag" id="rb-hero-tag">WINNER</div>
+        </aside>
+        <div class="rb-panel">
+          <p class="rb-kicker" id="rb-kicker">ROUND 1 · RESULT</p>
+          <h2 class="rb-title" id="ko-title"><span>K</span><span>.</span><span>O</span><span>.</span></h2>
+          <p class="rb-winner" id="ko-sub">奶龙 获胜</p>
+          <div class="rb-gems" id="rb-gems"><i></i><i></i><span>VS</span><i></i><i></i></div>
+          <p class="rb-hint" id="rb-hint"></p>
+          <div class="row">
+            <button class="btn" id="btn-again">下一回合</button>
+            <button class="btn ghost" id="btn-home">返回标题</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="train-panel" class="hidden">
+      <div class="t-hist"></div>
+      <div class="t-combo">READY</div>
+      <div class="t-best"></div>
+      <div class="t-cpu-row" id="train-cpu">
+        <span>CPU</span><button data-cpu="idle">站桩</button><button data-cpu="guard">只会防御</button><button data-cpu="normal">正常</button>
+        <em>R 重置位置</em>
+      </div>
+    </div>
+    <div id="replay-badge" class="hidden">◀◀ REPLAY · 按任意键跳过</div>
+    <div id="pause-ui" class="hidden">
+      <div class="pause-card">
+        <h2>PAUSED</h2>
+        <div class="p-col">
+          <button class="btn" id="btn-resume">继续对战</button>
+          <button class="btn ghost" id="btn-pause-restart">重开本回合</button>
+          <button class="btn ghost" id="btn-pause-settings">设置</button>
+          <button class="btn ghost" id="btn-pause-home">返回标题</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 设置面板（全局浮层） ============ -->
+  <div id="settings-panel" class="hidden">
+    <div class="set-card">
+      <header><h2>设置 <em>SETTINGS</em></h2><button id="btn-set-close" class="set-x">✕</button></header>
+      <div class="set-body">
+        <section>
+          <h3>音量</h3>
+          <label>主音量<input type="range" id="set-master" min="0" max="100" /></label>
+          <label>音效<input type="range" id="set-sfx" min="0" max="100" /></label>
+          <label>音乐<input type="range" id="set-music" min="0" max="100" /></label>
+          <label class="chk"><input type="checkbox" id="set-voice" /> 播报员语音（FIGHT / K.O.）</label>
+        </section>
+        <section>
+          <h3>画质</h3>
+          <label>档位<select id="set-quality"><option value="auto">自动</option><option value="high">高</option><option value="mid">中</option><option value="low">低</option></select></label>
+          <label class="chk"><input type="checkbox" id="set-shadows" /> 角色实时投影</label>
+          <label class="chk"><input type="checkbox" id="set-grain" /> 胶片颗粒</label>
+          <label class="chk"><input type="checkbox" id="set-vig" /> 电影暗角</label>
+          <label>屏幕震动<select id="set-shake"><option value="100">100%</option><option value="50">50%</option><option value="0">关闭</option></select></label>
+        </section>
+        <section>
+          <h3>通用</h3>
+          <label>语言<select id="set-lang"><option value="zh">中文</option><option value="en">English</option></select></label>
+          <label>侠名<input type="text" id="set-name" maxlength="8" placeholder="联机时显示" /></label>
+          <h3>键位（1P）</h3>
+          <div class="keymap">A/D 走 · W 跳 · S 蹲 · J 轻拳 · K 轻脚 · U/I 重拳脚 · L 必杀 · O 超必 · ESC 暂停</div>
+        </section>
+        <section>
+          <h3>成就</h3>
+          <div id="ach-list"></div>
+          <button class="btn ghost" id="btn-set-clear">清除存档</button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/GLTFLoader.js"></script>
+  <script src="js/bloom.js?v=sfe10"></script>
+  <script src="js/bootfx.js?v=sfe10"></script>
+  <script src="js/sys.js?v=sfe10"></script>
+  <script src="js/sfx.js?v=sfe10"></script>
+  <script src="js/core.js?v=sfe10"></script>
+  <script src="js/models.js?v=sfe10"></script>
+  <script src="js/glb.js?v=sfe10"></script>
+  <script src="js/anims.js?v=sfe10"></script>
+  <script src="js/fx.js?v=sfe10"></script>
+  <script src="js/stage.js?v=sfe10"></script>
+  <script src="js/cinema.js?v=sfe10"></script>
+  <script src="js/net.js?v=sfe10"></script>
+  <script src="js/game.js?v=sfe10"></script>
+</body>
+</html>
